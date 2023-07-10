@@ -5,21 +5,19 @@ local multichar = ESX.GetConfig().Multichar
 local function deleteIdentityFromDatabase(xPlayer)
     MySQL.query.await(
         'UPDATE users SET firstname = ?, lastname = ?, dateofbirth = ?, sex = ?, height = ?, skin = ? WHERE identifier = ?',
-        {nil, nil, nil, nil, nil, nil, xPlayer.identifier})
+        { nil, nil, nil, nil, nil, nil, xPlayer.identifier })
 
     if Config.FullCharDelete then
         MySQL.update.await('UPDATE addon_account_data SET money = 0 WHERE account_name IN (?) AND owner = ?',
-            {{'bank_savings', 'caution'}, xPlayer.identifier})
+            { { 'bank_savings', 'caution' }, xPlayer.identifier })
 
         MySQL.prepare.await('UPDATE datastore_data SET data = ? WHERE name IN (?) AND owner = ?',
-            {'\'{}\'', {'user_ears', 'user_glasses', 'user_helmet', 'user_mask'}, xPlayer.identifier})
+            { '\'{}\'', { 'user_ears', 'user_glasses', 'user_helmet', 'user_mask' }, xPlayer.identifier })
     end
 end
 
 local function deleteIdentity(xPlayer)
-    if not alreadyRegistered[xPlayer.identifier] then
-        return
-    end
+    if not alreadyRegistered[xPlayer.identifier] then return end
 
     xPlayer.setName(('%s %s'):format(nil, nil))
     xPlayer.set('firstName', nil)
@@ -33,17 +31,16 @@ end
 local function saveIdentityToDatabase(identifier, identity)
     MySQL.update.await(
         'UPDATE users SET firstname = ?, lastname = ?, dateofbirth = ?, sex = ?, height = ? WHERE identifier = ?',
-        {identity.firstName, identity.lastName, identity.dateOfBirth, identity.sex, identity.height, identifier})
+        { identity.firstName, identity.lastName, identity.dateOfBirth, identity.sex, identity.height, identifier })
 end
 
 local function checkDOBFormat(str)
     str = tostring(str)
-    if not string.match(str, '(%d%d)/(%d%d)/(%d%d%d%d)') then
-        return false
-    end
-    
+
+    if not string.match(str, '(%d%d)/(%d%d)/(%d%d%d%d)') then return false end
+
     local d, m, y = string.match(str, '(%d+)/(%d+)/(%d+)')
-        
+
     m = tonumber(m)
     d = tonumber(d)
     y = tonumber(y)
@@ -51,16 +48,24 @@ local function checkDOBFormat(str)
     if ((d <= 0) or (d > 31)) or ((m <= 0) or (m > 12)) or ((y <= Config.LowestYear) or (y > Config.HighestYear)) then
         return false
     elseif m == 4 or m == 6 or m == 9 or m == 11 then
-        return d < 30
+        return d <= 30
     elseif m == 2 then
         if y % 400 == 0 or (y % 100 ~= 0 and y % 4 == 0) then
-            return d < 29
+            return d <= 29
         else
-            return d < 28
+            return d <= 28
         end
     else
-        return d < 31
+        return d <= 31
     end
+end
+
+local function convertTimestampToDate(timestamp)
+    local dateTable = os.date("*t", timestamp / 1000)
+    local formattedDate = string.format("%02d/%02d/%04d", dateTable.day, dateTable.month, dateTable.year)
+
+    print(formattedDate)
+    return formattedDate
 end
 
 local function formatDate(str)
@@ -84,10 +89,10 @@ local function checkForNumbers(str)
     return (string.match(str, "%d"))
 end
 
-local function checkNameFormat(name)
+local function checkNameFormat(name, minLength, maxLength)
     if not checkAlphanumeric(name) and not checkForNumbers(name) then
         local stringLength = string.len(name)
-        return stringLength > 0 and stringLength < Config.MaxNameLength
+        return stringLength >= minLength and stringLength <= maxLength
     end
 
     return false
@@ -126,7 +131,7 @@ if Config.UseDeferrals then
 
         if identifier then
             MySQL.single('SELECT firstname, lastname, dateofbirth, sex, height FROM users WHERE identifier = ?',
-                {identifier}, function(result)
+                { identifier }, function(result)
                     if result then
                         if result.firstname then
                             playerIdentity[identifier] = {
@@ -155,7 +160,7 @@ if Config.UseDeferrals then
                                         '' or data.height == '' then
                                         deferrals.done(TranslateCap('data_incorrect'))
                                     else
-                                        if checkNameFormat(data.firstname) and checkNameFormat(data.lastname) and
+                                        if checkNameFormat(data.firstname, Config.MinFirstNameLength, Config.MaxFirstNameLength) and checkNameFormat(data.lastname, Config.MinLastNameLength, Config.MaxLastNameLength) and
                                             checkDOBFormat(data.dateofbirth) and checkSexFormat(data.sex) and
                                             checkHeightFormat(data.height) then
                                             playerIdentity[identifier] = {
@@ -189,10 +194,10 @@ if Config.UseDeferrals then
                                 if data.firstname == '' or data.lastname == '' or data.dateofbirth == '' or data.sex == '' or data.height == '' then
                                     return deferrals.done(TranslateCap('data_incorrect'))
                                 end
-                                if not checkNameFormat(data.firstname) then
+                                if not checkNameFormat(data.firstname, Config.MinFirstNameLength, Config.MaxFirstNameLength) then
                                     return deferrals.done(TranslateCap('invalid_firstname_format'))
                                 end
-                                if not checkNameFormat(data.lastname) then
+                                if not checkNameFormat(data.lastname, Config.MinLastNameLength, Config.MaxLastNameLength) then
                                     return deferrals.done(TranslateCap('invalid_lastname_format'))
                                 end
                                 if not checkDOBFormat(data.dateofbirth) then
@@ -204,7 +209,7 @@ if Config.UseDeferrals then
                                 if not checkHeightFormat(data.height) then
                                     return deferrals.done(TranslateCap('invalid_height_format'))
                                 end
-                                
+
                                 playerIdentity[identifier] = {
                                     firstName = formatName(data.firstname),
                                     lastName = formatName(data.lastname),
@@ -246,8 +251,8 @@ if Config.UseDeferrals then
         playerIdentity[xPlayer.identifier] = nil
     end)
 else
-	local function setIdentity(xPlayer)
-		if not alreadyRegistered[xPlayer.identifier] then
+    local function setIdentity(xPlayer)
+        if not alreadyRegistered[xPlayer.identifier] then
             return
         end
         local currentIdentity = playerIdentity[xPlayer.identifier]
@@ -264,10 +269,10 @@ else
         end
 
         playerIdentity[xPlayer.identifier] = nil
-	end
-	
-	local function checkIdentity(xPlayer)
-		MySQL.single('SELECT firstname, lastname, dateofbirth, sex, height FROM users WHERE identifier = ?', {xPlayer.identifier},
+    end
+
+    local function checkIdentity(xPlayer)
+        MySQL.single('SELECT firstname, lastname, dateofbirth, sex, height FROM users WHERE identifier = ?', { xPlayer.identifier },
             function(result)
                 if not result then
                     return TriggerClientEvent('esx_identity:showRegisterIdentity', xPlayer.source)
@@ -290,18 +295,18 @@ else
                 setIdentity(xPlayer)
             end
         )
-	end
+    end
 
-	if not multichar then
-		AddEventHandler('playerConnecting', function(playerName, setKickReason, deferrals)
-			deferrals.defer()
-			local playerId, identifier = source, ESX.GetIdentifier(source)
-			Wait(40)
+    if not multichar then
+        AddEventHandler('playerConnecting', function(playerName, setKickReason, deferrals)
+            deferrals.defer()
+            local playerId, identifier = source, ESX.GetIdentifier(source)
+            Wait(40)
 
-			if not identifier then
+            if not identifier then
                 return deferrals.done(TranslateCap('no_identifier'))
             end
-            MySQL.single('SELECT firstname, lastname, dateofbirth, sex, height FROM users WHERE identifier = ?', {identifier}, 
+            MySQL.single('SELECT firstname, lastname, dateofbirth, sex, height FROM users WHERE identifier = ?', { identifier },
                 function(result)
                     if not result then
                         playerIdentity[identifier] = nil
@@ -326,27 +331,26 @@ else
 
                     deferrals.done()
                 end)
-		end)
+        end)
 
-		AddEventHandler('onResourceStart', function(resource)
-            if resource ~= GetCurrentResourceName() then
-                return
-            end
+        AddEventHandler('onResourceStart', function(resource)
+            if resource ~= GetCurrentResourceName() then return end
+
             Wait(300)
 
             while not ESX do Wait(0) end
 
             local xPlayers = ESX.GetExtendedPlayers()
 
-            for i=1, #(xPlayers) do 
+            for i = 1, #(xPlayers) do
                 if xPlayers[i] then
                     checkIdentity(xPlayers[i])
                 end
             end
         end)
 
-		RegisterNetEvent('esx:playerLoaded', function(playerId, xPlayer)
-			local currentIdentity = playerIdentity[xPlayer.identifier]
+        RegisterNetEvent('esx:playerLoaded', function(playerId, xPlayer)
+            local currentIdentity = playerIdentity[xPlayer.identifier]
 
             if currentIdentity and alreadyRegistered[xPlayer.identifier] then
                 xPlayer.setName(('%s %s'):format(currentIdentity.firstName, currentIdentity.lastName))
@@ -355,7 +359,9 @@ else
                 xPlayer.set('dateofbirth', currentIdentity.dateOfBirth)
                 xPlayer.set('sex', currentIdentity.sex)
                 xPlayer.set('height', currentIdentity.height)
+
                 TriggerClientEvent('esx_identity:setPlayerData', xPlayer.source, currentIdentity)
+
                 if currentIdentity.saveToDatabase then
                     saveIdentityToDatabase(xPlayer.identifier, currentIdentity)
                 end
@@ -368,35 +374,41 @@ else
             else
                 TriggerClientEvent('esx_identity:showRegisterIdentity', xPlayer.source)
             end
-		end)
-	end
+        end)
+    end
 
-	ESX.RegisterServerCallback('esx_identity:registerIdentity', function(source, cb, data)
-		local xPlayer = ESX.GetPlayerFromId(source)
-		if not checkNameFormat(data.firstname) then
-	            	TriggerClientEvent('esx:showNotification',source,TranslateCap('invalid_firstname_format'), "error")
-            		return cb(false)
-        	end
-        	if not checkNameFormat(data.lastname) then
-            		TriggerClientEvent('esx:showNotification',source,TranslateCap('invalid_lastname_format'), "error")
-            		return cb(false)
-        	end
-        	if not checkSexFormat(data.sex) then
-            		TriggerClientEvent('esx:showNotification',source,TranslateCap('invalid_sex_format'), "error")
-            		return cb(false)
-        	end
-        	if not checkDOBFormat(data.dateofbirth) then
-            		TriggerClientEvent('esx:showNotification',source,TranslateCap('invalid_dob_format'), "error")
-            		return cb(false)
-        	end
-        	if not checkHeightFormat(data.height) then
-            		TriggerClientEvent('esx:showNotification',source,TranslateCap('invalid_height_format'), "error")
-            		return cb(false)
-        	end
-		if xPlayer then	
-			if alreadyRegistered[xPlayer.identifier] then
-				xPlayer.showNotification(TranslateCap('already_registered'), "error")
-				return cb(false)
+    ESX.RegisterServerCallback('esx_identity:registerIdentity', function(source, cb, data)
+        if type(data) ~= "table" then return cb(false) end
+
+        data.dateofbirth = convertTimestampToDate(data.dateofbirth)
+
+        if not checkNameFormat(data.firstname, Config.MinFirstNameLength, Config.MaxFirstNameLength) then
+            TriggerClientEvent('esx:showNotification', source, TranslateCap('invalid_firstname_format'), "error")
+            return cb(false)
+        end
+        if not checkNameFormat(data.lastname, Config.MinLastNameLength, Config.MaxLastNameLength) then
+            TriggerClientEvent('esx:showNotification', source, TranslateCap('invalid_lastname_format'), "error")
+            return cb(false)
+        end
+        if not checkSexFormat(data.sex) then
+            TriggerClientEvent('esx:showNotification', source, TranslateCap('invalid_sex_format'), "error")
+            return cb(false)
+        end
+        if not checkDOBFormat(data.dateofbirth) then
+            TriggerClientEvent('esx:showNotification', source, TranslateCap('invalid_dob_format'), "error")
+            return cb(false)
+        end
+        if not checkHeightFormat(data.height) then
+            TriggerClientEvent('esx:showNotification', source, TranslateCap('invalid_height_format'), "error")
+            return cb(false)
+        end
+
+        local xPlayer = ESX.GetPlayerFromId(source)
+
+        if xPlayer then
+            if alreadyRegistered[xPlayer.identifier] then
+                xPlayer.showNotification(TranslateCap('already_registered'), "error")
+                return cb(false)
             end
 
             playerIdentity[xPlayer.identifier] = {
@@ -445,19 +457,19 @@ else
         TriggerEvent('esx_identity:completedRegistration', source, data)
         TriggerClientEvent('esx_identity:setPlayerData', source, Identity)
         cb(true)
-	end)
+    end)
 end
 
 if Config.EnableCommands then
-	ESX.RegisterCommand('char', 'user', function(xPlayer, args, showError)
+    ESX.RegisterCommand('char', 'user', function(xPlayer, args, showError)
         if xPlayer and xPlayer.getName() then
             xPlayer.showNotification(TranslateCap('active_character', xPlayer.getName()))
         else
             xPlayer.showNotification(TranslateCap('error_active_character'))
         end
-    end, false, {help = TranslateCap('show_active_character')})
+    end, false, { help = TranslateCap('show_active_character') })
 
-	ESX.RegisterCommand('chardel', 'user', function(xPlayer, args, showError)
+    ESX.RegisterCommand('chardel', 'user', function(xPlayer, args, showError)
         if xPlayer and xPlayer.getName() then
             if Config.UseDeferrals then
                 xPlayer.kick(TranslateCap('deleted_identity'))
@@ -476,7 +488,7 @@ if Config.EnableCommands then
         else
             xPlayer.showNotification(TranslateCap('error_delete_character'))
         end
-    end, false, {help = TranslateCap('delete_character')})
+    end, false, { help = TranslateCap('delete_character') })
 end
 
 if Config.EnableDebugging then
@@ -486,7 +498,7 @@ if Config.EnableDebugging then
         else
             xPlayer.showNotification(TranslateCap('error_debug_xPlayer_get_first_name'))
         end
-    end, false, {help = TranslateCap('debug_xPlayer_get_first_name')})
+    end, false, { help = TranslateCap('debug_xPlayer_get_first_name') })
 
     ESX.RegisterCommand('xPlayerGetLastName', 'user', function(xPlayer, args, showError)
         if xPlayer and xPlayer.get('lastName') then
@@ -494,7 +506,7 @@ if Config.EnableDebugging then
         else
             xPlayer.showNotification(TranslateCap('error_debug_xPlayer_get_last_name'))
         end
-    end, false, {help = TranslateCap('debug_xPlayer_get_last_name')})
+    end, false, { help = TranslateCap('debug_xPlayer_get_last_name') })
 
     ESX.RegisterCommand('xPlayerGetFullName', 'user', function(xPlayer, args, showError)
         if xPlayer and xPlayer.getName() then
@@ -502,7 +514,7 @@ if Config.EnableDebugging then
         else
             xPlayer.showNotification(TranslateCap('error_debug_xPlayer_get_full_name'))
         end
-    end, false, {help = TranslateCap('debug_xPlayer_get_full_name')})
+    end, false, { help = TranslateCap('debug_xPlayer_get_full_name') })
 
     ESX.RegisterCommand('xPlayerGetSex', 'user', function(xPlayer, args, showError)
         if xPlayer and xPlayer.get('sex') then
@@ -510,7 +522,7 @@ if Config.EnableDebugging then
         else
             xPlayer.showNotification(TranslateCap('error_debug_xPlayer_get_sex'))
         end
-    end, false, {help = TranslateCap('debug_xPlayer_get_sex')})
+    end, false, { help = TranslateCap('debug_xPlayer_get_sex') })
 
     ESX.RegisterCommand('xPlayerGetDOB', 'user', function(xPlayer, args, showError)
         if xPlayer and xPlayer.get('dateofbirth') then
@@ -518,7 +530,7 @@ if Config.EnableDebugging then
         else
             xPlayer.showNotification(TranslateCap('error_debug_xPlayer_get_dob'))
         end
-    end, false, {help = TranslateCap('debug_xPlayer_get_dob')})
+    end, false, { help = TranslateCap('debug_xPlayer_get_dob') })
 
     ESX.RegisterCommand('xPlayerGetHeight', 'user', function(xPlayer, args, showError)
         if xPlayer and xPlayer.get('height') then
@@ -526,5 +538,5 @@ if Config.EnableDebugging then
         else
             xPlayer.showNotification(TranslateCap('error_debug_xPlayer_get_height'))
         end
-    end, false, {help = TranslateCap('debug_xPlayer_get_height')})
+    end, false, { help = TranslateCap('debug_xPlayer_get_height') })
 end

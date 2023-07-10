@@ -1,35 +1,30 @@
-fx_version 'adamant'
+fx_version "cerulean"
+use_experimental_fxv2_oal "yes"
+lua54 "yes"
+game "gta5"
 
-game 'gta5'
+name "esx_identity"
+version "0.1.0"
+description "ESX-Overextended Identity"
 
-description 'ESX Identity'
-lua54 'yes'
-version '1.9.4'
+dependencies {
+    "es_extended",
+    "esx_skin"
+}
 
 shared_scripts {
-	'@es_extended/imports.lua',
-	'@es_extended/locale.lua',
+    '@es_extended/imports.lua',
+    '@es_extended/locale.lua',
+    '@ox_lib/init.lua',
+    'locales/*.lua',
+    'config.lua'
 }
 
 server_scripts {
-	'@oxmysql/lib/MySQL.lua',
-	'locales/*.lua',
-	'config.lua',
-	'server/main.lua'
+    '@oxmysql/lib/MySQL.lua',
+    'server/*.lua'
 }
 
 client_scripts {
-	'locales/*.lua',
-	'config.lua',
-	'client/main.lua'
+    'client/*.lua'
 }
-
-ui_page 'html/index.html'
-
-files {
-	'html/index.html',
-	'html/js/script.js',
-	'html/css/style.css',
-}
-
-dependency 'es_extended'
