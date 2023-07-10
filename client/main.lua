@@ -26,22 +26,67 @@ end)
 if Config.UseDeferrals then return end
 
 local function showIdentityForm()
+    SetTimecycleModifier("hud_def_blur")
+
     local minDate = Config.DateFormat
-    minDate = string.gsub(minDate, '[Yy][Yy][Yy][Yy]', Config.LowestYear) -- Replace 'YYYY' or 'yyyy' with Config.LowestYear
-    minDate = string.gsub(minDate, '[Mm][Mm]', '01')                      -- Replace 'MM' or 'mm' with '01'
-    minDate = string.gsub(minDate, '[Dd][Dd]', '01')                      -- Replace 'DD' or 'dd' with '01'
+    minDate = string.gsub(minDate, "[Yy][Yy][Yy][Yy]", Config.LowestYear) -- Replace "YYYY" or "yyyy" with Config.LowestYear
+    minDate = string.gsub(minDate, "[Mm][Mm]", "01")                      -- Replace "MM" or "mm" with "01"
+    minDate = string.gsub(minDate, "[Dd][Dd]", "01")                      -- Replace "DD" or "dd" with "01"
 
     local maxDate = Config.DateFormat
-    maxDate = string.gsub(maxDate, '[Yy][Yy][Yy][Yy]', Config.HighestYear) -- Replace 'YYYY' or 'yyyy' with Config.HighestYear
-    maxDate = string.gsub(maxDate, '[Mm][Mm]', '01')                       -- Replace 'MM' or 'mm' with '01'
-    maxDate = string.gsub(maxDate, '[Dd][Dd]', '01')                       -- Replace 'DD' or 'dd' with '01'
+    maxDate = string.gsub(maxDate, "[Yy][Yy][Yy][Yy]", Config.HighestYear + 1) -- Replace "YYYY" or "yyyy" with Config.HighestYear
+    maxDate = string.gsub(maxDate, "[Mm][Mm]", "01")                           -- Replace "MM" or "mm" with "01"
+    maxDate = string.gsub(maxDate, "[Dd][Dd]", "01")                           -- Replace "DD" or "dd" with "01"
 
     local input = lib.inputDialog("IDENTITY", {
-        { type = "input",  label = "First Name",    description = "Your character's first name",    required = true, placeholder = "First Name",  min = Config.MinFirstNameLength,                max = Config.MaxFirstNameLength },
-        { type = "input",  label = "Last Name",     description = "Your character's last name",     required = true, placeholder = "Last Name",   min = Config.MinLastNameLength,                 max = Config.MaxLastNameLength },
-        { type = "date",   label = "Date Of Birth", description = "Your character's date-of-birth", required = true, format = Config.DateFormat,  min = minDate,                                  max = maxDate },
-        { type = "number", label = "Height (CM)",   description = "Your character's height",        required = true, placeholder = "Height (CM)", min = Config.MinHeight,                         max = Config.MaxHeight },
-        { type = "select", label = "Gender",        description = "Your character's gender",        required = true, placeholder = "Gender",      options = { ["m"] = "Male", ["f"] = "Female" }, default = "m" }
+        {
+            type = "input",
+            label = "First Name",
+            description = "Your character's first name",
+            required = true,
+            placeholder = "First Name",
+            min = Config.MinFirstNameLength,
+            max = Config.MaxFirstNameLength
+        },
+        {
+            type = "input",
+            label = "Last Name",
+            description = "Your character's last name",
+            required = true,
+            placeholder = "Last Name",
+            min = Config.MinLastNameLength,
+            max = Config.MaxLastNameLength
+        },
+        {
+            type = "date",
+            label = "Date Of Birth",
+            description = "Your character's date-of-birth",
+            required = true,
+            format = Config.DateFormat,
+            min = minDate,
+            max = maxDate
+        },
+        {
+            type = "number",
+            label = "Height (CM)",
+            description = "Your character's height",
+            required = true,
+            placeholder = "Height (CM)",
+            min = Config.MinHeight,
+            max = Config.MaxHeight
+        },
+        {
+            type = "select",
+            label = "Gender",
+            description = "Your character's gender",
+            required = true,
+            placeholder = "Gender",
+            options = {
+                { label = "Male",   value = "m" },
+                { label = "Female", value = "f" }
+            },
+            default = "m"
+        }
     }, { allowCancel = false })
 
     if not input then return showIdentityForm() end
@@ -56,6 +101,8 @@ local function showIdentityForm()
 
     ESX.TriggerServerCallback("esx_identity:registerIdentity", function(callback)
         if not callback then return showIdentityForm() end
+
+        ClearTimecycleModifier()
 
         ESX.ShowNotification(_U("thank_you_for_registering"), "success")
 
