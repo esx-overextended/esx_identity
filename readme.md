@@ -1,30 +1,39 @@
-<h1 align='center'>[ESX] Identity</a></h1><p align='center'><b><a href='https://discord.esx-framework.org/'>Discord</a> - <a href='https://documentation.esx-framework.org/legacy/installation'>Documentation</a></b></h5>
+<h1 align='center'>ESX Overextended Identity</a></h1>
+<p align='center'><a href='https://esx-overextended.github.io/es_extended/installation'>Documentation</a></b></p>
 
-A Core Resource that Allows the player to Pick their characters, Name, Gender, Height and Date-of-birth.
+<p align='center'>A resource that lets players to pick their characters's name, gender, height and date-of-birth</b></p>
 
-![Preview](./preview.png)
-
-# Infomation
+![Preview](https://cdn.discordapp.com/attachments/839000566206169098/1128159026111336479/image.png)
 
 ## Requirements
 
-[esx_skin](./../esx_skin/README.md)
+- es_extended
+- esx_skin
 
-## Commands
+### 📌Legal Notices
 
-```
-/char
-/chardel
-```
+<table>
+<tr>
+<td>
 
-## Legal
+esx_identity - Make your Character a Person
 
-esx_identity - Make your Character a Person!
+Copyright (C) 2015-2023 ESX-Framework (Jérémie N'gadi)
 
-Copyright (C) 2015-2023 Jérémie N'gadi
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-This program Is free software: you can redistribute it And/Or modify it under the terms Of the GNU General Public License As published by the Free Software Foundation, either version 3 Of the License, Or (at your option) any later version.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU General Public License for more details.
 
-This program Is distributed In the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty Of MERCHANTABILITY Or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License For more details.
+</td>
+</tr>
 
-You should have received a copy Of the GNU General Public License along with this program. If Not, see <http://www.gnu.org/licenses/>.
+<tr>
+<td>
+
+You should have received a copy of the GNU General Public License along with this program.
+If not, see https://www.gnu.org/licenses/
+
+</td>
+</tr>
+</table>
